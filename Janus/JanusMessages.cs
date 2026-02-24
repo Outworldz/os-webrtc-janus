@@ -53,16 +53,19 @@ namespace WebRtcVoice
         }
         public OSDMap RawBody => m_message;
 
-        public string TransactionId { 
-            get { return m_message.ContainsKey("transaction") ? m_message["transaction"] : null; }
+        public string TransactionId
+        {
+            get { return m_message.TryGetString("transaction", out string tid) ? tid : null; }
             set { m_message["transaction"] = value; }
         }
-        public string Sender { 
-            get { return m_message.ContainsKey("sender") ? m_message["sender"] : null; }
+        public string Sender
+        {
+            get { return m_message.TryGetString("sender", out string sender) ? sender : null; }
             set { m_message["sender"] = value; }
         }
-        public OSDMap Jsep { 
-            get { return m_message.ContainsKey("jsep") ? (m_message["jsep"] as OSDMap) : null; }
+        public OSDMap Jsep
+        {
+            get { return m_message.TryGetOSDMap("jsep", out OSDMap jsep) ? jsep : null; }
             set { m_message["jsep"] = value; }
         }
         public void SetJsep(string pOffer, string pSdp)
@@ -79,8 +82,9 @@ namespace WebRtcVoice
             m_message["apisecret"] = pToken;
         }
         // Note that the session_id is a long number in the JSON so we convert the string.
-        public string sessionId { 
-            get { return m_message.ContainsKey("session_id") ? OSDToLong(m_message["session_id"]).ToString() : String.Empty; }
+        public string sessionId
+        {
+            get { return m_message.TryGetValue("session_id", out OSD sessionId) ? OSDToLong(sessionId).ToString() : String.Empty; }
             set { m_message["session_id"] = long.Parse(value); }
         }
         public bool hasSessionId { get { return m_message.ContainsKey("session_id"); } }
@@ -97,7 +101,8 @@ namespace WebRtcVoice
         {
             m_message["handle_id"] = long.Parse(pToken);
         }
-        public string sender {
+        public string sender
+        {
             get { return m_message.ContainsKey("sender") ? m_message["sender"] : String.Empty; }
         }
 
@@ -118,7 +123,7 @@ namespace WebRtcVoice
         //    and one fetches it with .AsInteger(), it will return the first 4 bytes as an integer
         //    and not the long value. So this function looks at the type of the OSD object and
         //    extracts the number appropriately.
-        public long OSDToLong(OSD pIn)
+        public static long OSDToLong(OSD pIn)
         {
             long ret = 0;
             switch (pIn.Type)
@@ -194,7 +199,7 @@ namespace WebRtcVoice
         }
 
         // Return the "data" portion of the response as an OSDMap or null if there is none
-        public OSDMap dataSection { get { return m_message.ContainsKey("data") ? (m_message["data"] as OSDMap) : null; } }
+        public OSDMap dataSection { get { return m_message.TryGetOSDMap("data", out OSDMap data) ? data : null; } }
 
         // Check if a successful response code is in the response
         public virtual bool isSuccess { get { return CheckReturnCode("success"); } }
@@ -204,14 +209,18 @@ namespace WebRtcVoice
         {
             return ReturnCode == pCode;
         }
-        public virtual string ReturnCode { get { 
-            string ret = String.Empty;
-            if (m_message is not null && m_message.ContainsKey("janus"))
+        public virtual string ReturnCode
+        {
+            get
             {
-                ret = m_message["janus"].AsString();
+                string ret = string.Empty;
+                if (m_message is not null && m_message.TryGetString("janus", out string janus))
+                {
+                    ret = janus;
+                }
+                return ret;
             }
-            return ret;
-        } }
+        }
     }
 
     // ==============================================================
@@ -245,29 +254,37 @@ namespace WebRtcVoice
         }
 
         // Dig through the response to get the error code or 0 if there is none
-        public int errorCode { get {
-            int ret = 0;
-            if (m_message.ContainsKey("error"))
+        public int errorCode
+        {
+            get
             {
-                var err = m_message["error"];
-                if (err is OSDMap)
-                    ret = (int)OSDToLong((err as OSDMap)["code"]);
+                int ret = 0;
+                if (m_message.ContainsKey("error"))
+                {
+                    var err = m_message["error"];
+                    if (err is OSDMap)
+                        ret = (int)OSDToLong((err as OSDMap)["code"]);
+                }
+                return ret;
             }
-            return ret;
-        }}
+        }
 
         // Dig through the response to get the error reason or empty string if there is none
-        public string errorReason { get {
-            string ret = String.Empty;
-            if (m_message.ContainsKey("error"))
+        public string errorReason
+        {
+            get
             {
-                var err = m_message["error"];
-                if (err is OSDMap)
-                    ret = (err as OSDMap)["reason"];
+                string ret = string.Empty;
+                if (m_message.ContainsKey("error"))
+                {
+                    var err = m_message["error"];
+                    if (err is OSDMap)
+                        ret = (err as OSDMap)["reason"];
+                }
+                // return ((m_message["error"] as OSDMap)?["reason"]) ?? string.Empty;
+                return ret;
             }
-            // return ((m_message["error"] as OSDMap)?["reason"]) ?? String.Empty;
-            return ret;
-        }}
+        }
     }
     // ==============================================================
     // Create session request and response
@@ -281,13 +298,17 @@ namespace WebRtcVoice
     {
         public CreateSessionResp(JanusMessageResp pResp) : base(pResp.RawBody)
         { }
-        public string returnedId { get {
-            // The JSON response gives a long number (not a string)
-            //    and the ODMap conversion interprets it as a long (OSDLong).
-            // If one just does a "ToString()" on the OSD object, you
-            //    get an interpretation of the binary value.
-            return dataSection.ContainsKey("id") ? OSDToLong(dataSection["id"]).ToString() : String.Empty;
-        }}  
+        public string returnedId
+        {
+            get
+            {
+                // The JSON response gives a long number (not a string)
+                //    and the ODMap conversion interprets it as a long (OSDLong).
+                // If one just does a "ToString()" on the OSD object, you
+                //    get an interpretation of the binary value.
+                return dataSection.ContainsKey("id") ? OSDToLong(dataSection["id"]).ToString() : string.Empty;
+            }
+        }
     }
     // ==============================================================
     public class DestroySessionReq : JanusMessageReq
@@ -296,7 +317,7 @@ namespace WebRtcVoice
         {
             // Doesn't include the session ID because it is the URI
         }
-    }   
+    }
     // ==============================================================
     public class TrickleReq : JanusMessageReq
     {
@@ -317,7 +338,7 @@ namespace WebRtcVoice
             else
                 m_message["candidate"] = pCandidates;
         }
-    }   
+    }
     // ==============================================================
     public class AttachPluginReq : JanusMessageReq
     {
@@ -330,9 +351,13 @@ namespace WebRtcVoice
     {
         public AttachPluginResp(JanusMessageResp pResp) : base(pResp.RawBody)
         { }
-        public string pluginId { get {
-            return dataSection.ContainsKey("id") ? OSDToLong(dataSection["id"]).ToString() : String.Empty;
-        }}
+        public string pluginId
+        {
+            get
+            {
+                return dataSection.ContainsKey("id") ? OSDToLong(dataSection["id"]).ToString() : string.Empty;
+            }
+        }
     }
     // ==============================================================
     public class DetachPluginReq : JanusMessageReq
@@ -349,7 +374,7 @@ namespace WebRtcVoice
         {
             // Doesn't include the session ID or plugin ID because it is the URI
         }
-    }   
+    }
     // ==============================================================
     // Plugin messages are defined here as wrappers around OSDMap.
     // The ToJson() method is overridden to put the OSDMap into the
@@ -366,7 +391,7 @@ namespace WebRtcVoice
     public class PluginMsgReq : JanusMessageReq
     {
         private OSDMap m_body = new OSDMap();
-        
+
         // Note that the passed OSDMap is placed in the "body" section of the message
         public PluginMsgReq(OSDMap pBody) : base("message")
         {
@@ -460,7 +485,7 @@ namespace WebRtcVoice
     //            "permanent": false
     //        }
     //    }
-    public class AudioBridgeResp: PluginMsgResp
+    public class AudioBridgeResp : PluginMsgResp
     {
         public AudioBridgeResp(JanusMessageResp pResp) : base(pResp)
         {
@@ -488,7 +513,7 @@ namespace WebRtcVoice
                                                 { "spatial_audio", pSpatial },
                                                 { "denoise", false },
                                                 { "record", false }
-                                            })  
+                                            })
         {
             if (!String.IsNullOrEmpty(pDesc))
                 AddStringToBody("description", pDesc);
@@ -501,7 +526,7 @@ namespace WebRtcVoice
                                                 { "request", "destroy" },
                                                 { "room", pRoomId },
                                                 { "permanent", true }
-                                            })  
+                                            })
         {
         }
     }
@@ -548,7 +573,7 @@ namespace WebRtcVoice
                                                 { "request", "leave" },
                                                 { "room", pRoomId },
                                                 { "id", pAttendeeId }
-                                            })  
+                                            })
         {
         }
     }
@@ -557,7 +582,7 @@ namespace WebRtcVoice
     {
         public AudioBridgeListRoomsReq() : base(new OSDMap() {
                                                 { "request", "list" }
-                                            })  
+                                            })
         {
         }
     }
@@ -567,7 +592,7 @@ namespace WebRtcVoice
         public AudioBridgeListParticipantsReq(int pRoom) : base(new OSDMap() {
                                                 { "request", "listparticipants" },
                                                 { "room", pRoom }
-                                            })  
+                                            })
         {
         }
     }
