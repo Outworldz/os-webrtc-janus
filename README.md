@@ -1,5 +1,16 @@
 # os-webrtc-janus
 
+<div style="background-color: #f9c0c0;
+            border: 1px solid black;
+            padding: 15px;
+            border-radius: 5px;">
+<strong>NOTE:</strong> As of February 26, 2026, this code and functionality has been integrated
+into <a href="http://opensimulator.org">OpenSimulator</a>
+and <a href="https://github.com/OpenSim-NGC/OpenSim-Tranquillity">NGC</a>
+and therefore this `addon-module` will no longer be developed
+or updated.
+</div>
+
 Addon-module for [OpenSimulator] to provide webrtc voice support
 using Janus-gateway.
 
