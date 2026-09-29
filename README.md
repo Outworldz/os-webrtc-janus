@@ -7,6 +7,38 @@
 > and therefore this `addon-module` will no longer be developed
 > or updated.
 
+## Outworldz copy: what is changed
+
+This is the copy of [os-webrtc-janus] used to build the OpenSimulator that ships
+with [DreamGrid]. It is a fork of the original by Misterblue, which is no longer
+developed (see the note above). The licence is unchanged (MPL-2.0).
+
+**No source code is changed.** Every `.cs` file is the same as the original.
+Only the four project files differ:
+
+- `Janus/WebRtcJanusService.csproj`
+- `WebRtcVoice/WebRtcVoice.csproj`
+- `WebRtcVoiceRegionModule/WebRtcVoiceRegionModule.csproj`
+- `WebRtcVoiceServiceModule/WebRtcVoiceServiceModule.csproj`
+
+What differs in them:
+
+- Paths use Windows backslashes (`..\..\..\bin\`) instead of forward slashes.
+- Five library references (`log4net`, `Nini`, `OpenMetaverse`,
+  `OpenMetaverse.StructuredData`, `OpenMetaverseTypes`) point to a fixed folder
+  on the Outworldz build machine:
+  `O:\Opensim\A_TandyV7\OutworldzFiles\Opensim\bin\`.
+  `Mono.Addins` still uses a relative path.
+- The `<Version>1.1.5</Version>` lines are removed.
+- `OSDOps.cs` is listed in the Janus project.
+- `WebRtcVoice` no longer references `OpenSim.Server.Handlers`.
+- The order of the source files in each list is different.
+
+**To build this anywhere else**, run OpenSimulator's `runprebuild` to make new
+project files for your own folders, as described under
+[Building](#building-plugin-into-opensimulator) below. That replaces all of the
+changes listed here.
+
 Addon-module for [OpenSimulator] to provide webrtc voice support
 using Janus-gateway.
 
@@ -237,5 +269,6 @@ This is a growing section and will be added to over time.
 [OpenSimulator]: http://opensimulator.org
 [OpenSimulator Community Conference]: https://conference.opensimulator.org
 [os-webrtc-janus]: https://github.com/Misterblue/os-webrtc-janus
+[DreamGrid]: https://www.outworldz.com
 [Janus-Gateway WebRTC server]: https://janus.conf.meetecho.com/
 [os-webrtc-janus-docker]: https://github.com/Misterblue/os-webrtc-janus-docker
